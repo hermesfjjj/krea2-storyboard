@@ -1,0 +1,60 @@
+{
+    "models": {
+        "unet": "krea2_turbo_fp8_scaled.safetensors",
+        "clip": "qwen3vl_4b_fp8_scaled.safetensors",
+        "vae": "qwen_image_vae.safetensors"
+    },
+    "loras": [
+        {"name": "krea2_identity_edit_v1_2.safetensors", "strength": 1.0},
+        {"name": "krea2_kidsdrawing.safetensors", "strength": 1.0}
+    ],
+    "generation": {
+        "width": 1280,
+        "height": 720,
+        "steps": 35,
+        "cfg": 1.0,
+        "denoise": 1.0,
+        "seed": 0,
+        "sampler": "euler",
+        "scheduler": "simple"
+    },
+    "upscale": {
+        "enabled": true,
+        "factor": 1.5,
+        "steps": 4,
+        "denoise": 0.4
+    },
+    "style": {
+        "prefix": "Krea2Edit",
+        "quality": "Pixar-quality 3D animated movie, DreamWorks quality, stylized animation, expressive faces, soft lighting, global illumination, vibrant colors, ultra detailed, masterpiece"
+    },
+    "characters": {
+        "a": {
+            "name": "Jaja",
+            "description": "Main character, friendly and adventurous"
+        },
+        "b": {
+            "name": "Tutu",
+            "description": "Side character, mischievous but lovable"
+        }
+    },
+    "storyboard": {
+        "scenes": [
+            "Jaja is happily planting colorful flowers in a beautiful garden",
+            "Tutu appears from behind a bush, looking curious",
+            "They discover a magical portal in the garden",
+            "Both characters enter the portal together",
+            "They arrive in a colorful fantasy world",
+            "Meeting friendly woodland creatures",
+            "Exploring a crystal cave with glowing minerals",
+            "Finding a treasure chest hidden in the cave",
+            "Opening the chest to reveal magical items",
+            "Jaja uses magic powers to help animals",
+            "Tutu flies with magical butterfly wings",
+            "Both characters dance in a rainbow waterfall",
+            "Watching a beautiful sunset over the fantasy land",
+            "Returning through the portal to the garden",
+            "Waving goodbye to new friends, promising to return"
+        ]
+    }
+}

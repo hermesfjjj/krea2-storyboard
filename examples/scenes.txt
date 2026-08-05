@@ -1,0 +1,18 @@
+# Example Storyboard Scenes
+# One scene per line
+
+Scene 1: Jaja is happily planting colorful flowers in a beautiful garden with butterflies flying around
+Scene 2: Tutu appears from behind a large oak tree, looking curious and slightly mischievous
+Scene 3: They discover a glowing magical portal hidden behind the garden waterfall
+Scene 4: Both characters hold hands and step through the shimmering portal together
+Scene 5: They arrive in a colorful fantasy world with floating islands and rainbow rivers
+Scene 6: Meeting friendly woodland creatures - rabbits, deer, and birds gather around them
+Scene 7: Exploring a crystal cave with glowing blue and purple minerals everywhere
+Scene 8: Finding an ancient treasure chest covered in moss and vines
+Scene 9: Opening the chest to reveal magical items - a glowing wand and golden wings
+Scene 10: Jaja uses the magic wand to help injured animals in the forest
+Scene 11: Tutu wears the golden wings and flies gracefully through the clouds
+Scene 12: Both characters dance together in a magical rainbow waterfall
+Scene 13: Watching a beautiful orange and pink sunset over the fantasy landscape
+Scene 14: Returning through the portal back to their garden, carrying magical flowers
+Scene 15: Waving goodbye to their new fantasy friends, promising to return someday

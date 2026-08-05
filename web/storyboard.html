@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krea2 Storyboard Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #f66744, #ff9a56);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+        
+        .sidebar {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            height: fit-content;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #f66744;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #f66744;
+            border-radius: 2px;
+        }
+        
+        .character-upload {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .upload-box {
+            border: 2px dashed rgba(246, 103, 68, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-box:hover {
+            border-color: #f66744;
+            background: rgba(246, 103, 68, 0.1);
+        }
+        
+        .upload-box.has-image {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .upload-box input {
+            display: none;
+        }
+        
+        .upload-box img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .settings {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .setting-row label {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        
+        .setting-row input, .setting-row select {
+            width: 120px;
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .prompts-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .prompt-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .prompt-card.active {
+            border-color: #f66744;
+        }
+        
+        .prompt-card h3 {
+            font-size: 0.9em;
+            color: #f66744;
+            margin-bottom: 10px;
+        }
+        
+        .prompt-card textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 5px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            resize: none;
+            font-size: 0.85em;
+        }
+        
+        .prompt-card textarea:focus {
+            outline: none;
+            border-color: #f66744;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #f66744, #ff9a56);
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(246, 103, 68, 0.4);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .output-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 300px;
+        }
+        
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        
+        .output-image {
+            aspect-ratio: 16/9;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .output-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .output-image .scene-num {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #f66744;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f66744, #ff9a56);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Krea2 Storyboard Generator</h1>
+            <p>Generate professional storyboard scenes with Krea 2 Turbo</p>
+        </div>
+        
+        <div class="main-grid">
+            <div class="sidebar">
+                <div class="section">
+                    <div class="section-title">Character Sheets</div>
+                    <div class="character-upload">
+                        <div class="upload-box" id="upload-a" onclick="document.getElementById('file-a').click()">
+                            <input type="file" id="file-a" accept="image/*" onchange="handleUpload(this, 'a')">
+                            <div id="placeholder-a">
+                                <p>📁 Upload Character A</p>
+                                <small>Click or drag image here</small>
+                            </div>
+                            <img id="preview-a" style="display:none;">
+                        </div>
+                        <div class="upload-box" id="upload-b" onclick="document.getElementById('file-b').click()">
+                            <input type="file" id="file-b" accept="image/*" onchange="handleUpload(this, 'b')">
+                            <div id="placeholder-b">
+                                <p>📁 Upload Character B</p>
+                                <small>Click or drag image here</small>
+                            </div>
+                            <img id="preview-b" style="display:none;">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Settings</div>
+                    <div class="settings">
+                        <div class="setting-row">
+                            <label>Resolution</label>
+                            <select id="resolution">
+                                <option value="1280x720" selected>16:9 (1280×720)</option>
+                                <option value="1920x1080">16:9 (1920×1080)</option>
+                                <option value="1024x576">16:9 (1024×576)</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <label>Steps</label>
+                            <input type="number" id="steps" value="35" min="1" max="100">
+                        </div>
+                        <div class="setting-row">
+                            <label>CFG Scale</label>
+                            <input type="number" id="cfg" value="1.0" min="0" max="10" step="0.1">
+                        </div>
+                        <div class="setting-row">
+                            <label>Seed</label>
+                            <input type="number" id="seed" value="0" min="0">
+                        </div>
+                        <div class="setting-row">
+                            <label>Upscale</label>
+                            <input type="checkbox" id="upscale" checked>
+                        </div>
+                        <div class="setting-row">
+                            <label>Ref Boost</label>
+                            <input type="number" id="refboost" value="4.0" min="0" max="10" step="0.5">
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="generate-btn" id="generateBtn" onclick="generateStoryboard()">
+                    🚀 Generate Storyboard
+                </button>
+            </div>
+            
+            <div class="main-content">
+                <div class="prompts-section">
+                    <div class="section-title">Storyboard Scenes (15 Prompts)</div>
+                    <div class="prompts-grid" id="promptsGrid">
+                        <!-- 15 prompt cards will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="output-section">
+                    <div class="section-title">Generated Storyboard</div>
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Generating storyboard scenes...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText">0/15 scenes</p>
+                    </div>
+                    <div class="output-grid" id="outputGrid">
+                        <!-- Generated images will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize 15 prompt cards
+        const promptsGrid = document.getElementById('promptsGrid');
+        for (let i = 1; i <= 15; i++) {
+            const card = document.createElement('div');
+            card.className = 'prompt-card';
+            card.innerHTML = `
+                <h3>Scene ${i}</h3>
+                <textarea id="scene-${i}" placeholder="Describe scene ${i}..."></textarea>
+            `;
+            promptsGrid.appendChild(card);
+        }
+        
+        // Handle character upload
+        function handleUpload(input, character) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(`preview-${character}`);
+                    const placeholder = document.getElementById(`placeholder-${character}`);
+                    const uploadBox = document.getElementById(`upload-${character}`);
+                    
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    uploadBox.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Generate storyboard
+        async function generateStoryboard() {
+            const btn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const outputGrid = document.getElementById('outputGrid');
+            
+            // Gather prompts
+            const prompts = [];
+            for (let i = 1; i <= 15; i++) {
+                const prompt = document.getElementById(`scene-${i}`).value;
+                if (prompt.trim()) {
+                    prompts.push(prompt);
+                }
+            }
+            
+            if (prompts.length === 0) {
+                alert('Please enter at least one scene prompt!');
+                return;
+            }
+            
+            // Show loading
+            btn.disabled = true;
+            loading.classList.add('active');
+            outputGrid.innerHTML = '';
+            
+            // Simulate generation (in real implementation, this would call ComfyUI API)
+            for (let i = 0; i < prompts.length; i++) {
+                document.getElementById('progressFill').style.width = `${((i + 1) / prompts.length) * 100}%`;
+                document.getElementById('progressText').textContent = `${i + 1}/${prompts.length} scenes`;
+                
+                // Simulate delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Add placeholder image
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'output-image';
+                imageDiv.innerHTML = `
+                    <div style="width:100%;height:100%;background:linear-gradient(45deg, #f66744, #ff9a56);display:flex;align-items:center;justify-content:center;">
+                        <span>Scene ${i + 1}</span>
+                    </div>
+                    <div class="scene-num">${i + 1}</div>
+                `;
+                outputGrid.appendChild(imageDiv);
+            }
+            
+            // Hide loading
+            loading.classList.remove('active');
+            btn.disabled = false;
+            
+            alert('Storyboard generation complete!');
+        }
+        
+        // Drag and drop support
+        document.querySelectorAll('.upload-box').forEach(box => {
+            box.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                box.style.borderColor = '#f66744';
+            });
+            
+            box.addEventListener('dragleave', () => {
+                box.style.borderColor = 'rgba(246, 103, 68, 0.5)';
+            });
+            
+            box.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    const input = box.querySelector('input[type="file"]');
+                    input.files = e.dataTransfer.files;
+                    handleUpload(input, box.id.split('-')[1]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
