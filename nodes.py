@@ -21,14 +21,28 @@ class Krea2StoryboardLoader:
     
     @classmethod
     def INPUT_TYPES(cls):
+        # Create krea2 folder if it doesn't exist
+        krea2_dir = os.path.join(folder_paths.models_dir, "diffusion_models", "krea2")
+        os.makedirs(krea2_dir, exist_ok=True)
+        
+        # Also create loras/krea2 folder
+        loras_krea2_dir = os.path.join(folder_paths.models_dir, "loras", "krea2")
+        os.makedirs(loras_krea2_dir, exist_ok=True)
+        
+        def safe_listdir(path):
+            try:
+                if os.path.exists(path):
+                    return sorted([f for f in os.listdir(path) 
+                                  if f.endswith(('.safetensors', '.ckpt'))])
+            except:
+                pass
+            return ["(no models found)"]
+        
         return {
             "required": {
-                "unet_name": (sorted([f for f in os.listdir(os.path.join(folder_paths.models_dir, "diffusion_models", "krea2")) 
-                                     if f.endswith(('.safetensors', '.ckpt'))]),),
-                "clip_name": (sorted([f for f in os.listdir(os.path.join(folder_paths.models_dir, "text_encoders")) 
-                                     if f.endswith(('.safetensors', '.ckpt'))]),),
-                "vae_name": (sorted([f for f in os.listdir(os.path.join(folder_paths.models_dir, "vae")) 
-                                    if f.endswith(('.safetensors', '.ckpt'))]),),
+                "unet_name": (safe_listdir(krea2_dir),),
+                "clip_name": (safe_listdir(os.path.join(folder_paths.models_dir, "text_encoders")),),
+                "vae_name": (safe_listdir(os.path.join(folder_paths.models_dir, "vae")),),
             }
         }
     
