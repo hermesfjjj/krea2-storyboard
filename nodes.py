@@ -1,11 +1,10 @@
 """
 Krea2 Storyboard Generator - ComfyUI Custom Node
-Generates storyboard scenes with Krea 2 Turbo model
+Simple and stable version
 """
 
 import os
 import torch
-import folder_paths
 
 
 class Krea2StoryboardGenerator:
@@ -13,33 +12,11 @@ class Krea2StoryboardGenerator:
     
     @classmethod
     def INPUT_TYPES(cls):
-        # Get available models
-        def get_models(subfolder, extensions=('.safetensors', '.ckpt')):
-            path = os.path.join(folder_paths.models_dir, subfolder)
-            os.makedirs(path, exist_ok=True)
-            try:
-                files = [f for f in os.listdir(path) if any(f.endswith(ext) for ext in extensions)]
-                return sorted(files) if files else ["(no models found)"]
-            except:
-                return ["(no models found)"]
-        
-        # Get krea2 specific models
-        def get_krea2_models():
-            krea2_path = os.path.join(folder_paths.models_dir, "diffusion_models", "krea2")
-            os.makedirs(krea2_path, exist_ok=True)
-            return get_models("diffusion_models/krea2")
-        
-        # Get loras
-        def get_loras():
-            loras_path = os.path.join(folder_paths.models_dir, "loras", "krea2")
-            os.makedirs(loras_path, exist_ok=True)
-            return get_models("loras/krea2")
-        
         return {
             "required": {
-                "unet_name": (get_krea2_models(),),
-                "clip_name": (get_models("text_encoders"),),
-                "vae_name": (get_models("vae"),),
+                "unet_name": ("STRING", {"default": "krea2_turbo_fp8_scaled.safetensors"}),
+                "clip_name": ("STRING", {"default": "qwen3vl_4b_fp8_scaled.safetensors"}),
+                "vae_name": ("STRING", {"default": "qwen_image_vae.safetensors"}),
                 "character_a": ("IMAGE",),
                 "character_b": ("IMAGE",),
                 "scene_1": ("STRING", {"multiline": True, "default": ""}),
@@ -66,7 +43,7 @@ class Krea2StoryboardGenerator:
                 "style_prefix": ("STRING", {"default": "Pixar-quality 3D animated movie, DreamWorks quality, stylized animation, expressive faces, soft lighting, global illumination, vibrant colors, ultra detailed, masterpiece", "multiline": True}),
             },
             "optional": {
-                "lora_name": (get_loras() + ["None"],),
+                "lora_name": ("STRING", {"default": "None"}),
                 "lora_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
                 "use_upscale": ("BOOLEAN", {"default": True}),
                 "upscale_factor": ("FLOAT", {"default": 1.5, "min": 1.0, "max": 2.0, "step": 0.1}),
@@ -90,32 +67,40 @@ class Krea2StoryboardGenerator:
                            use_upscale=True, upscale_factor=1.5,
                            negative_prompt="blurry, low quality, deformed"):
         
-        # Import ComfyUI nodes
-        from nodes import (
-            UNETLoader, CLIPLoader, VAELoader,
-            KSampler, VAEDecode, EmptySD3LatentImage,
-            LatentUpscaleBy, PowerLoraLoader
-        )
+        try:
+            # Import ComfyUI nodes
+            from nodes import UNETLoader, CLIPLoader, VAELoader
+            from nodes import KSampler, VAEDecode, EmptySD3LatentImage
+            from nodes import LatentUpscaleBy
+        except ImportError as e:
+            print(f"[Krea2Storyboard] Import error: {e}")
+            return (torch.zeros(1, height, width, 3),)
         
         print(f"[Krea2Storyboard] Loading models...")
         
-        # Load UNET
-        model = UNETLoader().load_unet(unet_name, "default")[0]
-        
-        # Load CLIP
-        clip = CLIPLoader().load_clip(clip_name, "krea2", "default")[0]
-        
-        # Load VAE
-        vae = VAELoader().load_vae(vae_name)[0]
+        try:
+            # Load UNET
+            model = UNETLoader().load_unet(unet_name, "default")[0]
+            
+            # Load CLIP
+            clip = CLIPLoader().load_clip(clip_name, "krea2", "default")[0]
+            
+            # Load VAE
+            vae = VAELoader().load_vae(vae_name)[0]
+        except Exception as e:
+            print(f"[Krea2Storyboard] Model loading error: {e}")
+            return (torch.zeros(1, height, width, 3),)
         
         # Load LoRA if specified
         if lora_name and lora_name != "None":
             print(f"[Krea2Storyboard] Loading LoRA: {lora_name}")
             try:
                 from nodes import LoraLoader
-                model, clip = LoraLoader().load_lora(lora_name, lora_strength, lora_strength, model, clip)[0], LoraLoader().load_lora(lora_name, lora_strength, lora_strength, model, clip)[1]
-            except:
-                print(f"[Krea2Storyboard] Warning: Could not load LoRA {lora_name}")
+                lora_result = LoraLoader().load_lora(lora_name, lora_strength, lora_strength, model, clip)
+                model = lora_result[0]
+                clip = lora_result[1]
+            except Exception as e:
+                print(f"[Krea2Storyboard] Warning: Could not load LoRA: {e}")
         
         # Collect valid scenes
         scenes = []
@@ -127,7 +112,6 @@ class Krea2StoryboardGenerator:
         
         if not scenes:
             print("[Krea2Storyboard] Error: No scenes provided!")
-            # Return empty image
             return (torch.zeros(1, height, width, 3),)
         
         print(f"[Krea2Storyboard] Generating {len(scenes)} scenes...")
@@ -140,47 +124,56 @@ class Krea2StoryboardGenerator:
             # Build prompt
             prompt = f"Krea2Edit, {scene_text}, {style_prefix}"
             
-            # Encode prompt
-            positive = clip.encode(prompt, pooled_output=False)[0]
-            negative = clip.encode(negative_prompt, pooled_output=False)[0]
-            
-            # Create empty latent
-            latent = EmptySD3LatentImage().generate(width, height, 1)[0]
-            
-            # First pass - generate base image
-            scene_seed = seed + scene_num
-            samples = KSampler().sample(
-                model=model,
-                positive=positive,
-                negative=negative,
-                latent_image=latent,
-                seed=scene_seed,
-                steps=steps,
-                cfg=cfg,
-                sampler_name="euler",
-                scheduler="simple",
-                denoise=denoise
-            )[0]
-            
-            # Optional upscale pass
-            if use_upscale:
-                upscaled = LatentUpscaleBy().upscale(samples, "nearest-exact", upscale_factor)[0]
+            try:
+                # Encode prompt
+                positive = clip.encode(prompt, pooled_output=False)[0]
+                negative = clip.encode(negative_prompt, pooled_output=False)[0]
+                
+                # Create empty latent
+                latent = EmptySD3LatentImage().generate(width, height, 1)[0]
+                
+                # First pass - generate base image
+                scene_seed = seed + scene_num
                 samples = KSampler().sample(
                     model=model,
                     positive=positive,
                     negative=negative,
-                    latent_image=upscaled,
+                    latent_image=latent,
                     seed=scene_seed,
-                    steps=4,
+                    steps=steps,
                     cfg=cfg,
                     sampler_name="euler",
                     scheduler="simple",
-                    denoise=0.4
+                    denoise=denoise
                 )[0]
-            
-            # Decode to image
-            image = VAEDecode().decode(samples, vae)[0]
-            all_images.append(image)
+                
+                # Optional upscale pass
+                if use_upscale:
+                    upscaled = LatentUpscaleBy().upscale(samples, "nearest-exact", upscale_factor)[0]
+                    samples = KSampler().sample(
+                        model=model,
+                        positive=positive,
+                        negative=negative,
+                        latent_image=upscaled,
+                        seed=scene_seed,
+                        steps=4,
+                        cfg=cfg,
+                        sampler_name="euler",
+                        scheduler="simple",
+                        denoise=0.4
+                    )[0]
+                
+                # Decode to image
+                image = VAEDecode().decode(samples, vae)[0]
+                all_images.append(image)
+                
+            except Exception as e:
+                print(f"[Krea2Storyboard] Error generating scene {scene_num}: {e}")
+                continue
+        
+        if not all_images:
+            print("[Krea2Storyboard] Error: No images generated!")
+            return (torch.zeros(1, height, width, 3),)
         
         # Stack all images
         storyboard = torch.cat(all_images, dim=0)
